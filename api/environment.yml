@@ -1,0 +1,10 @@
+name: esp32-obd2-logger # This will become the name of your environment
+dependencies: # The list of packages to include in your environment
+    - python=3.13 # You can specify versions
+    - uvicorn[standard]
+    - fastapi
+    - sqlalchemy
+    - psycopg2
+    - pip # Install pip in your environment
+    - pip: # Include pip dependencies last
+        - databases[postgresql]

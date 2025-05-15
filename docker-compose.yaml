@@ -1,0 +1,53 @@
+services:
+  fastapi:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+    container_name: fastapi_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+    networks:
+      - fastapi_network
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    networks:
+      - fastapi_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - fastapi
+    networks:
+      - fastapi_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  fastapi_network:
+    name: fastapi_network
+    driver: bridge
