@@ -53,16 +53,13 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             try:
-                payload: dict = json.loads(data)
-                epochtime = data.get("time")
-                sensordata = data.get("sensorData")
-                query = messages.insert().values(text=f"time: {epochtime} data: {sensordata}")
+                query = messages.insert().values(text=str(data))
                 await database.execute(query)
-                print("Received JSON:", payload)
+                print("Received JSON:", str(data))
                 # Echo back with modification
                 await websocket.send_text(json.dumps({
                     "status": "received",
-                    "original": payload
+                    "original": str(data)
                 }))
             except json.JSONDecodeError:
                 await websocket.send_text(json.dumps({
