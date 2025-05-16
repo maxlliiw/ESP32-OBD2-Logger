@@ -57,6 +57,6 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             query = messages.insert().values(text=str(data))
             await database.execute(query)
-            logger.info("Received JSON:", str(data))
+            logger.info("Received JSON:", extra=str(data))
     except Exception as e:
-        logger.error("WebSocket connection closed:", str(e))
+        logger.error("WebSocket connection closed:", extra=str(e))
