@@ -3,6 +3,7 @@ import json
 import sqlalchemy
 import databases
 import os
+import logging
 from contextlib import asynccontextmanager
 
 DATABASE_URL = os.getenv(
@@ -18,6 +19,8 @@ messages = sqlalchemy.Table(
 )
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
+
+logger = logging.getLogger("FASTAPI")
 
 
 # Create the FastAPI app with a lifespan context manager
@@ -52,18 +55,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            try:
-                query = messages.insert().values(text=str(data))
-                await database.execute(query)
-                print("Received JSON:", str(data))
-                # Echo back with modification
-                await websocket.send_text(json.dumps({
-                    "status": "received",
-                    "original": str(data)
-                }))
-            except json.JSONDecodeError:
-                await websocket.send_text(json.dumps({
-                    "error": "Invalid JSON"
-                }))
+            query = messages.insert().values(text=str(data))
+            await database.execute(query)
+            logger.info("Received JSON:", str(data))
     except Exception as e:
-        print("WebSocket connection closed:", str(e))
+        logger.error("WebSocket connection closed:", str(e))
