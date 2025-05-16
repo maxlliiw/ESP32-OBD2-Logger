@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+import json
 import sqlalchemy
 import databases
 import os
@@ -41,7 +42,31 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def read_root():
-    query = messages.insert().values(text="Hello from PostgreSQL!")
-    await database.execute(query)
     results = await database.fetch_all(messages.select())
     return {"messages": [dict(row) for row in results]}
+
+
+@app.websocket("/message")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                payload: dict = json.loads(data)
+                epochtime = data.get("time")
+                sensordata = data.get("sensorData")
+                query = messages.insert().values(text=f"time: {epochtime} data: {sensordata}")
+                await database.execute(query)
+                print("Received JSON:", payload)
+                # Echo back with modification
+                await websocket.send_text(json.dumps({
+                    "status": "received",
+                    "original": payload
+                }))
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({
+                    "error": "Invalid JSON"
+                }))
+    except Exception as e:
+        print("WebSocket connection closed:", str(e))
