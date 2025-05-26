@@ -155,7 +155,7 @@ void loop() {
     if (client.available() && OBD2_CONNECTED) {
 		int engineSpeed = 0;
 		int vehicleSpeed = 0;
-		int batteryVoltage = obd.getVoltage();
+		float batteryVoltage = obd.getVoltage();
 		obd.readPID(PID_RPM, engineSpeed);
 		obd.readPID(PID_SPEED, vehicleSpeed);
         unsigned long timestampMS = millis();
