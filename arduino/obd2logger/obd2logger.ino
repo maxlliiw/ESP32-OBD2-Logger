@@ -14,12 +14,13 @@ bool OBD2_CONNECTED = false;
 unsigned long count = 0;
 
 const char *ntpServer = "pool.ntp.org";
-float epochTimeMS = 0.0;
+int epochTime = 0;
 
 using namespace websockets;
 WebsocketsClient client;
 String ws_url = "ws://" + String(WS_HOST) + String(WS_ENDPOINT) +
                 "?api_key=" + String(WS_KEY);
+char vin[18] = {0};
 
 void initWiFi() {
     Serial.println("Initializing WiFi connection");
@@ -39,14 +40,14 @@ void initWiFi() {
 
 void initTime() {
     configTime(0, 0, ntpServer);
-    while (epochTimeMS == 0.0) {
+    while (epochTime == 0) {
         time_t now;
         struct tm timeinfo;
         if (!getLocalTime(&timeinfo)) {
-            epochTimeMS = 0.0;
+            epochTime = 0;
         } else {
 			time(&now);
-			epochTimeMS = (((float)now) * 1000) - ((float) millis());
+			epochTime = now;
 		}
     }
 }
@@ -84,6 +85,12 @@ void connectOBD() {
         if (obd.init()) {
             Serial.println("OK");
             OBD2_CONNECTED = true;
+            char buf[128];
+            if (obd.getVIN(buf, sizeof(buf))) {
+                memcpy(vin, buf, sizeof(vin) - 1);
+                Serial.print("VIN:");
+                Serial.println(vin);
+            }
         } else {
             Serial.println();
         }
@@ -151,8 +158,10 @@ void loop() {
 		int batteryVoltage = obd.getVoltage();
 		obd.readPID(PID_RPM, engineSpeed);
 		obd.readPID(PID_SPEED, vehicleSpeed);
+        unsigned long timestampMS = millis();
 
-        String json = "{\"timestampMS\": " + String(epochTimeMS + ((float) millis()), 0) + 
+        String json = "{\"startTime\": " + String(epochTime) + 
+                    ", \"timestampMS\": " + String(timestampMS) + 
 					", \"vehicleSpeed\": " + String(vehicleSpeed) + 
 					", \"engineSpeed\": " + String(engineSpeed) + 
 					", \"batteryVoltage\": " + String(batteryVoltage) + "}";

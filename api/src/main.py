@@ -6,21 +6,22 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@postgres:5432/mydb")
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", "postgresql://user:password@postgres:5432/mydb")
 API_KEY = os.getenv("API_KEY")
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
 
 vehicle_log = sqlalchemy.Table(
-    "vehicleLog",
+    "vehicleLog2",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("timestampMS", sqlalchemy.String),
+    sqlalchemy.Column("timestampMS", sqlalchemy.Integer),
     sqlalchemy.Column("engineSpeed", sqlalchemy.Integer),
     sqlalchemy.Column("vehicleSpeed", sqlalchemy.Integer),
     sqlalchemy.Column("batteryVoltage", sqlalchemy.Float),
-    
+
 )
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
@@ -54,6 +55,13 @@ async def read_root():
     return {"messages": [dict(row) for row in results]}
 
 
+@app.delete("/logs/clear")
+async def clear_logs():
+    query = vehicle_log.delete()
+    await database.execute(query)
+    return {"status": "success", "message": "All vehicle logs have been deleted."}
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     api_key = websocket.query_params.get("api_key")
@@ -70,8 +78,11 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info("Received JSON:", extra=str(data))
 
             if ("timestampMS" in json_dict):
+                timestamp = int(json_dict.get("startTime")) * 1000
+                timestamp += int(json_dict.get("timestampMS"))
+
                 await database.execute(vehicle_log.insert().values(
-                    timestampMS=str(json_dict.get("timestampMS")),
+                    timestampMS=timestamp,
                     engineSpeed=int(json_dict.get("engineSpeed")),
                     vehicleSpeed=int(json_dict.get("vehicleSpeed")),
                     batteryVoltage=float(json_dict.get("batteryVoltage"))))
