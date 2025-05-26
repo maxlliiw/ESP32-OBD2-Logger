@@ -6,16 +6,21 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql://user:password@postgres:5432/mydb")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@postgres:5432/mydb")
+API_KEY = os.getenv("API_KEY")
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
-messages = sqlalchemy.Table(
-    "messages",
+
+vehicle_log = sqlalchemy.Table(
+    "vehicleLog",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("text", sqlalchemy.String),
+    sqlalchemy.Column("timestampMS", sqlalchemy.String),
+    sqlalchemy.Column("engineSpeed", sqlalchemy.Integer),
+    sqlalchemy.Column("vehicleSpeed", sqlalchemy.Integer),
+    sqlalchemy.Column("batteryVoltage", sqlalchemy.Float),
+    
 )
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
@@ -45,18 +50,28 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 async def read_root():
-    results = await database.fetch_all(messages.select())
+    results = await database.fetch_all(vehicle_log.select())
     return {"messages": [dict(row) for row in results]}
 
 
-@app.websocket("/message")
+@app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    api_key = websocket.query_params.get("api_key")
+    if api_key != API_KEY:
+        await websocket.close(code=1008)
+        print("Unauthorized WebSocket connection attempt")
+        return
+
     await websocket.accept()
     try:
         while True:
             data = await websocket.receive_text()
-            query = messages.insert().values(text=str(data))
-            await database.execute(query)
+            json_dict = json.loads(data)
             logger.info("Received JSON:", extra=str(data))
+
+            if ("timestampMS" in json_dict):
+                await database.execute(vehicle_log.insert(), [
+                    json_dict
+                ])
     except Exception as e:
         logger.error("WebSocket connection closed:", extra=str(e))

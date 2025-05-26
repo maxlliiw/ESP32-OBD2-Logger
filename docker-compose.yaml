@@ -4,7 +4,10 @@ services:
       context: ./api
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+      DATABASE_URL: postgresql://user:password@postgres:5432/mydb
+      API_KEY: /run/secrets/api_key
+    secrets:
+      - api_key
     container_name: fastapi_app
     depends_on:
       postgres:
