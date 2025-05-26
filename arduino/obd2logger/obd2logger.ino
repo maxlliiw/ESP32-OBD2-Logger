@@ -118,8 +118,8 @@ void setup() {
     Serial.begin(115200);
 
     // obd2 init
-    while (!sys.begin())
-        obd.begin(sys.link);
+    while (!sys.begin());
+    obd.begin(sys.link);
     delay(200);
 
     // wifi init
@@ -142,11 +142,10 @@ void loop() {
 
     connectOBD();
     connectWiFi();
-    connectWS();
 
     client.poll();
 
-    if (client.available()) {
+    if (client.available() && OBD2_CONNECTED) {
 		int engineSpeed = 0;
 		int vehicleSpeed = 0;
 		int batteryVoltage = obd.getVoltage();
