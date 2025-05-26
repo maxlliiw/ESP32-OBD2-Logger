@@ -70,8 +70,10 @@ async def websocket_endpoint(websocket: WebSocket):
             logger.info("Received JSON:", extra=str(data))
 
             if ("timestampMS" in json_dict):
-                await database.execute(vehicle_log.insert(), [
-                    json_dict
-                ])
+                await database.execute(vehicle_log.insert().values(
+                    timestampMS=str(json_dict.get("timestampMS")),
+                    engineSpeed=int(json_dict.get("engineSpeed")),
+                    vehicleSpeed=int(json_dict.get("vehicleSpeed")),
+                    batteryVoltage=float(json_dict.get("batteryVoltage"))))
     except Exception as e:
         logger.error("WebSocket connection closed:", extra=str(e))
