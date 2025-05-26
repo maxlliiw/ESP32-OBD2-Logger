@@ -46,6 +46,10 @@ services:
     networks:
       - fastapi_network
 
+secrets:
+  api_key:
+    file: api_key.txt
+
 volumes:
   postgres_data:
     driver: local
