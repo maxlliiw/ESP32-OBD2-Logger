@@ -1,4 +1,12 @@
 services:
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+     - '3000:3000'
+    volumes:
+     - 'grafana_storage:/var/lib/grafana'
   fastapi:
     build:
       context: ./api
@@ -52,6 +60,8 @@ secrets:
 
 volumes:
   postgres_data:
+    driver: local
+  grafana_storage:
     driver: local
 
 networks:
