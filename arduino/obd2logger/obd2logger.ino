@@ -180,5 +180,4 @@ void loop() {
     }
 
     digitalWrite(PIN_LED, LOW);
-    delay(50);
 }
