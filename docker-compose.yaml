@@ -8,8 +8,6 @@ services:
     volumes:
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - "grafana_storage:/var/lib/grafana"
-    networks:
-      - fastapi_network
   fastapi:
     build:
       context: ./api
