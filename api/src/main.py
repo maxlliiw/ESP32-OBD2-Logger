@@ -112,8 +112,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            logger.info("Received DATA: " + data)
-
+            logger.info("SIZE: " + len(data.encode('utf-8')) + ", Received DATA: " + data)
             json_dict = json.loads(data)
 
             if ("obd" in json_dict):
@@ -132,5 +131,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 await database.execute(vehicle_log.insert().values(values))
 
-    except Exception:
-        logger.error("WebSocket connection closed:")
+    except Exception as e:
+        logger.error("WebSocket connection closed: " + str(e))
