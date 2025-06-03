@@ -22,6 +22,8 @@ String ws_url = "ws://" + String(WS_HOST) + String(WS_ENDPOINT) +
                 "?api_key=" + String(WS_KEY);
 char vin[18] = {0};
 
+int pids[21] = {0};
+
 void initWiFi() {
     Serial.println("Initializing WiFi connection");
     WiFi.mode(WIFI_STA);
@@ -153,19 +155,52 @@ void loop() {
     client.poll();
 
     if (client.available() && OBD2_CONNECTED) {
-		int engineSpeed = 0;
-		int vehicleSpeed = 0;
 		float batteryVoltage = obd.getVoltage();
-		obd.readPID(PID_RPM, engineSpeed);
-		obd.readPID(PID_SPEED, vehicleSpeed);
+        obd.readPID(PID_ENGINE_LOAD, pids[0]);
+        obd.readPID(PID_COOLANT_TEMP, pids[1]);
+        obd.readPID(PID_SHORT_TERM_FUEL_TRIM_1, pids[2]);
+        obd.readPID(PID_LONG_TERM_FUEL_TRIM_1, pids[3]);
+        obd.readPID(PID_SHORT_TERM_FUEL_TRIM_2, pids[4]);
+        obd.readPID(PID_LONG_TERM_FUEL_TRIM_2, pids[5]);
+        obd.readPID(PID_FUEL_PRESSURE, pids[6]);
+        obd.readPID(PID_INTAKE_MAP, pids[7]);
+        obd.readPID(PID_RPM, pids[8]);
+        obd.readPID(PID_SPEED, pids[9]);
+        obd.readPID(PID_TIMING_ADVANCE, pids[10]);
+        obd.readPID(PID_INTAKE_TEMP, pids[11]);
+        obd.readPID(PID_MAF_FLOW, pids[12]);
+        obd.readPID(PID_THROTTLE, pids[13]);
+        obd.readPID(PID_BAROMETRIC, pids[14]);
+        obd.readPID(PID_CATALYST_TEMP_B1S1, pids[15]);
+        obd.readPID(PID_CATALYST_TEMP_B1S2, pids[16]);
+        obd.readPID(PID_AIR_FUEL_EQUIV_RATIO, pids[17]);
+        obd.readPID(PID_ENGINE_OIL_TEMP, pids[18]);
+        obd.readPID(PID_FUEL_INJECTION_TIMING, pids[19]);
+        obd.readPID(PID_ENGINE_FUEL_RATE, pids[20]);
         unsigned long timestampMS = millis();
 
-        String json = "{\"startTime\": " + String(epochTime) + 
-                    ", \"timestampMS\": " + String(timestampMS) + 
-					", \"vehicleSpeed\": " + String(vehicleSpeed) + 
-					", \"engineSpeed\": " + String(engineSpeed) + 
-					", \"batteryVoltage\": " + String(batteryVoltage) + "}";
-
+        String json = "{\"startTime\":" + String(epochTime) + ",\"timestampMS\": " + String(timestampMS) + ",\"vin\":" + String(vin) + ",\"volts\":" + batteryVoltage + ",\"pids\":[" +
+            pids[0] + "," +
+            pids[1] + "," +
+            pids[2] + "," +
+            pids[3] + "," +
+            pids[4] + "," +
+            pids[5] + "," +
+            pids[6] + "," +
+            pids[7] + "," +
+            pids[8] + "," +
+            pids[9] + "," +
+            pids[10] + "," +
+            pids[11] + "," +
+            pids[12] + "," +
+            pids[13] + "," +
+            pids[14] + "," +
+            pids[15] + "," +
+            pids[16] + "," +
+            pids[17] + "," +
+            pids[18] + "," +
+            pids[19] + "," +
+            pids[20] + "]}";
         Serial.println("[WebSocket] Sending: " + json);
         client.send(json);
     } else {

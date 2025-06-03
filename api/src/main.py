@@ -14,14 +14,33 @@ metadata = sqlalchemy.MetaData()
 
 
 vehicle_log = sqlalchemy.Table(
-    "vehicleLog2",
+    "vehicleLog3",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("timestampMS", sqlalchemy.Integer),
-    sqlalchemy.Column("engineSpeed", sqlalchemy.Integer),
-    sqlalchemy.Column("vehicleSpeed", sqlalchemy.Integer),
-    sqlalchemy.Column("batteryVoltage", sqlalchemy.Float),
-
+    sqlalchemy.Column("timestamp", sqlalchemy.Integer),
+    sqlalchemy.Column("VIN", sqlalchemy.String),
+    sqlalchemy.Column("BATTERY_VOLTAGE", sqlalchemy.Float),
+    sqlalchemy.Column("ENGINE_LOAD", sqlalchemy.Integer),
+    sqlalchemy.Column("COOLANT_TEMP", sqlalchemy.Integer),
+    sqlalchemy.Column("SHORT_TERM_FUEL_TRIM_1", sqlalchemy.Integer),
+    sqlalchemy.Column("LONG_TERM_FUEL_TRIM_1", sqlalchemy.Integer),
+    sqlalchemy.Column("SHORT_TERM_FUEL_TRIM_2", sqlalchemy.Integer),
+    sqlalchemy.Column("LONG_TERM_FUEL_TRIM_2", sqlalchemy.Integer),
+    sqlalchemy.Column("FUEL_PRESSURE", sqlalchemy.Integer),
+    sqlalchemy.Column("INTAKE_MAP", sqlalchemy.Integer),
+    sqlalchemy.Column("RPM", sqlalchemy.Integer),
+    sqlalchemy.Column("SPEED", sqlalchemy.Integer),
+    sqlalchemy.Column("TIMING_ADVANCE", sqlalchemy.Integer),
+    sqlalchemy.Column("INTAKE_TEMP", sqlalchemy.Integer),
+    sqlalchemy.Column("MAF_FLOW", sqlalchemy.Integer),
+    sqlalchemy.Column("THROTTLE_POSITION", sqlalchemy.Integer),
+    sqlalchemy.Column("BAROMETRIC_PRESSURE", sqlalchemy.Integer),
+    sqlalchemy.Column("CATALYST_TEMP_B1S1", sqlalchemy.Integer),
+    sqlalchemy.Column("CATALYST_TEMP_B1S2", sqlalchemy.Integer),
+    sqlalchemy.Column("AIR_FUEL_EQUIV_RATIO", sqlalchemy.Integer),
+    sqlalchemy.Column("ENGINE_OIL_TEMP", sqlalchemy.Integer),
+    sqlalchemy.Column("FUEL_INJECTION_TIMING", sqlalchemy.Integer),
+    sqlalchemy.Column("ENGINE_FUEL_RATE", sqlalchemy.Integer)
 )
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
@@ -77,14 +96,37 @@ async def websocket_endpoint(websocket: WebSocket):
             json_dict = json.loads(data)
             logger.info("Received JSON:", extra=str(data))
 
-            if ("timestampMS" in json_dict):
-                timestamp = int(json_dict.get("startTime")) * 1000
-                timestamp += int(json_dict.get("timestampMS"))
+            if ("timestampMS" in json_dict and "pids" in json_dict):
+                t = int(json_dict.get("startTime")) * 1000
+                t += int(json_dict.get("timestampMS"))
+
+                pids = json_dict.get("pids")
 
                 await database.execute(vehicle_log.insert().values(
-                    timestampMS=timestamp,
-                    engineSpeed=int(json_dict.get("engineSpeed")),
-                    vehicleSpeed=int(json_dict.get("vehicleSpeed")),
-                    batteryVoltage=float(json_dict.get("batteryVoltage"))))
+                    timestamp=t,
+                    VIN=json_dict.get("vin"),
+                    BATTERY_VOLTAGE=json_dict.get("volts"),
+                    ENGINE_LOAD=pids[0],
+                    COOLANT_TEMP=pids[1],
+                    SHORT_TERM_FUEL_TRIM_1=pids[2],
+                    LONG_TERM_FUEL_TRIM_1=pids[3],
+                    SHORT_TERM_FUEL_TRIM_2=pids[4],
+                    LONG_TERM_FUEL_TRIM_2=pids[5],
+                    FUEL_PRESSURE=pids[6],
+                    INTAKE_MAP=pids[7],
+                    RPM=pids[8],
+                    SPEED=pids[9],
+                    TIMING_ADVANCE=pids[10],
+                    INTAKE_TEMP=pids[11],
+                    MAF_FLOW=pids[12],
+                    THROTTLE_POSITION=pids[13],
+                    BAROMETRIC_PRESSURE=pids[14],
+                    CATALYST_TEMP_B1S1=pids[15],
+                    CATALYST_TEMP_B1S2=pids[16],
+                    AIR_FUEL_EQUIV_RATIO=pids[17],
+                    ENGINE_OIL_TEMP=pids[18],
+                    FUEL_INJECTION_TIMING=pids[19],
+                    ENGINE_FUEL_RATE=pids[20]
+                ))
     except Exception as e:
         logger.error("WebSocket connection closed:", extra=str(e))
