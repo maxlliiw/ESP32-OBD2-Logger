@@ -112,7 +112,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            logger.info("SIZE: " + len(data.encode('utf-8')) + ", Received DATA: " + data)
+            logger.info("SIZE: " + str(len(data.encode('utf-8'))) + ", Received DATA: " + data)
             json_dict = json.loads(data)
 
             if ("obd" in json_dict):
