@@ -116,7 +116,7 @@ async def websocket_endpoint(websocket: WebSocket):
             json_dict = json.loads(data)
 
             if ("obd" in json_dict):
-                obd = json.get("obd")
+                obd = json_dict.get("obd")
                 vin = obd.get("vin")
                 voltage = obd.get("battery") / 100
                 pids = obd.get("pids")
