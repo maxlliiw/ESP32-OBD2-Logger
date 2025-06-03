@@ -12,6 +12,24 @@ API_KEY = os.getenv("API_KEY")
 database = databases.Database(DATABASE_URL)
 metadata = sqlalchemy.MetaData()
 
+pid_map = {
+    '4': 'ENGINE_LOAD',
+    '5': 'COOLANT_TEMP',
+    '6': 'SHORT_TERM_FUEL_TRIM_1',
+    '7': 'LONG_TERM_FUEL_TRIM_1',
+    '8': 'SHORT_TERM_FUEL_TRIM_2',
+    '9': 'LONG_TERM_FUEL_TRIM_2',
+    '10': 'FUEL_PRESSURE',
+    '11': 'INTAKE_MAP',
+    '12': 'RPM',
+    '13': 'SPEED',
+    '14': 'TIMING_ADVANCE',
+    '15': 'INTAKE_TEMP',
+    '16': 'MAF_FLOW',
+    '17': 'THROTTLE_POSITION',
+    '51': 'BAROMETRIC_PRESSURE',
+    '68': 'AIR_FUEL_EQUIV_RATIO'
+}
 
 vehicle_log = sqlalchemy.Table(
     "CarDataLog",
@@ -35,12 +53,7 @@ vehicle_log = sqlalchemy.Table(
     sqlalchemy.Column("MAF_FLOW", sqlalchemy.Integer),
     sqlalchemy.Column("THROTTLE_POSITION", sqlalchemy.Integer),
     sqlalchemy.Column("BAROMETRIC_PRESSURE", sqlalchemy.Integer),
-    sqlalchemy.Column("CATALYST_TEMP_B1S1", sqlalchemy.Integer),
-    sqlalchemy.Column("CATALYST_TEMP_B1S2", sqlalchemy.Integer),
     sqlalchemy.Column("AIR_FUEL_EQUIV_RATIO", sqlalchemy.Integer),
-    sqlalchemy.Column("ENGINE_OIL_TEMP", sqlalchemy.Integer),
-    sqlalchemy.Column("FUEL_INJECTION_TIMING", sqlalchemy.Integer),
-    sqlalchemy.Column("ENGINE_FUEL_RATE", sqlalchemy.Integer)
 )
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
@@ -48,7 +61,8 @@ engine = sqlalchemy.create_engine(DATABASE_URL)
 logger = logging.getLogger("fastapi")
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -99,40 +113,24 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             data = await websocket.receive_text()
             logger.info("Received DATA: " + data)
-            # json_dict = json.loads(data)
-            # logger.info("Received JSON:", extra=str(data))
 
-            # if ("timestampMS" in json_dict and "pids" in json_dict):
-            #     t = int(json_dict.get("startTime")) * 1000
-            #     t += int(json_dict.get("timestampMS"))
+            json_dict = json.loads(data)
 
-            #     pids = json_dict.get("pids")
+            if ("obd" in json_dict):
+                obd = json.get("obd")
+                vin = obd.get("vin")
+                voltage = obd.get("battery") / 100
+                pids = obd.get("pids")
+                values = {
+                    pid_map[k]: v for k, v in pids.items()
+                }
+                t = int(json_dict.get("st")) * 1000
+                t += int(json_dict.get("ts"))
+                values["timestamp"] = t
+                values["VIN"] = vin
+                values["BATTERY_VOLTAGE"] = float(voltage) / 100
 
-            #     await database.execute(vehicle_log.insert().values(
-            #         timestamp=t,
-            #         VIN=json_dict.get("vin"),
-            #         BATTERY_VOLTAGE=json_dict.get("volts"),
-            #         ENGINE_LOAD=pids[0],
-            #         COOLANT_TEMP=pids[1],
-            #         SHORT_TERM_FUEL_TRIM_1=pids[2],
-            #         LONG_TERM_FUEL_TRIM_1=pids[3],
-            #         SHORT_TERM_FUEL_TRIM_2=pids[4],
-            #         LONG_TERM_FUEL_TRIM_2=pids[5],
-            #         FUEL_PRESSURE=pids[6],
-            #         INTAKE_MAP=pids[7],
-            #         RPM=pids[8],
-            #         SPEED=pids[9],
-            #         TIMING_ADVANCE=pids[10],
-            #         INTAKE_TEMP=pids[11],
-            #         MAF_FLOW=pids[12],
-            #         THROTTLE_POSITION=pids[13],
-            #         BAROMETRIC_PRESSURE=pids[14],
-            #         CATALYST_TEMP_B1S1=pids[15],
-            #         CATALYST_TEMP_B1S2=pids[16],
-            #         AIR_FUEL_EQUIV_RATIO=pids[17],
-            #         ENGINE_OIL_TEMP=pids[18],
-            #         FUEL_INJECTION_TIMING=pids[19],
-            #         ENGINE_FUEL_RATE=pids[20]
-            #     ))
-    except Exception as e:
-        logger.error("WebSocket connection closed:", extra=str(e))
+                await database.execute(vehicle_log.insert().values(values))
+
+    except Exception:
+        logger.error("WebSocket connection closed:")
