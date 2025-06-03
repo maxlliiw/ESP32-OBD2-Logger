@@ -14,10 +14,10 @@ metadata = sqlalchemy.MetaData()
 
 
 vehicle_log = sqlalchemy.Table(
-    "vehicleLog3",
+    "CarDataLog",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("timestamp", sqlalchemy.Integer),
+    sqlalchemy.Column("timestamp", sqlalchemy.BigInteger),
     sqlalchemy.Column("VIN", sqlalchemy.String),
     sqlalchemy.Column("BATTERY_VOLTAGE", sqlalchemy.Float),
     sqlalchemy.Column("ENGINE_LOAD", sqlalchemy.Integer),
@@ -45,7 +45,12 @@ vehicle_log = sqlalchemy.Table(
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
 
-logger = logging.getLogger("FASTAPI")
+logger = logging.getLogger("fastapi")
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 # Create the FastAPI app with a lifespan context manager
@@ -83,50 +88,51 @@ async def clear_logs():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    api_key = websocket.query_params.get("api_key")
-    if api_key != API_KEY:
-        await websocket.close(code=1008)
-        print("Unauthorized WebSocket connection attempt")
-        return
+    # api_key = websocket.query_params.get("api_key")
+    # if api_key != API_KEY:
+    #     await websocket.close(code=1008)
+    #     print("Unauthorized WebSocket connection attempt")
+    #     return
 
     await websocket.accept()
     try:
         while True:
             data = await websocket.receive_text()
-            json_dict = json.loads(data)
-            logger.info("Received JSON:", extra=str(data))
+            logger.info("Received DATA: " + data)
+            # json_dict = json.loads(data)
+            # logger.info("Received JSON:", extra=str(data))
 
-            if ("timestampMS" in json_dict and "pids" in json_dict):
-                t = int(json_dict.get("startTime")) * 1000
-                t += int(json_dict.get("timestampMS"))
+            # if ("timestampMS" in json_dict and "pids" in json_dict):
+            #     t = int(json_dict.get("startTime")) * 1000
+            #     t += int(json_dict.get("timestampMS"))
 
-                pids = json_dict.get("pids")
+            #     pids = json_dict.get("pids")
 
-                await database.execute(vehicle_log.insert().values(
-                    timestamp=t,
-                    VIN=json_dict.get("vin"),
-                    BATTERY_VOLTAGE=json_dict.get("volts"),
-                    ENGINE_LOAD=pids[0],
-                    COOLANT_TEMP=pids[1],
-                    SHORT_TERM_FUEL_TRIM_1=pids[2],
-                    LONG_TERM_FUEL_TRIM_1=pids[3],
-                    SHORT_TERM_FUEL_TRIM_2=pids[4],
-                    LONG_TERM_FUEL_TRIM_2=pids[5],
-                    FUEL_PRESSURE=pids[6],
-                    INTAKE_MAP=pids[7],
-                    RPM=pids[8],
-                    SPEED=pids[9],
-                    TIMING_ADVANCE=pids[10],
-                    INTAKE_TEMP=pids[11],
-                    MAF_FLOW=pids[12],
-                    THROTTLE_POSITION=pids[13],
-                    BAROMETRIC_PRESSURE=pids[14],
-                    CATALYST_TEMP_B1S1=pids[15],
-                    CATALYST_TEMP_B1S2=pids[16],
-                    AIR_FUEL_EQUIV_RATIO=pids[17],
-                    ENGINE_OIL_TEMP=pids[18],
-                    FUEL_INJECTION_TIMING=pids[19],
-                    ENGINE_FUEL_RATE=pids[20]
-                ))
+            #     await database.execute(vehicle_log.insert().values(
+            #         timestamp=t,
+            #         VIN=json_dict.get("vin"),
+            #         BATTERY_VOLTAGE=json_dict.get("volts"),
+            #         ENGINE_LOAD=pids[0],
+            #         COOLANT_TEMP=pids[1],
+            #         SHORT_TERM_FUEL_TRIM_1=pids[2],
+            #         LONG_TERM_FUEL_TRIM_1=pids[3],
+            #         SHORT_TERM_FUEL_TRIM_2=pids[4],
+            #         LONG_TERM_FUEL_TRIM_2=pids[5],
+            #         FUEL_PRESSURE=pids[6],
+            #         INTAKE_MAP=pids[7],
+            #         RPM=pids[8],
+            #         SPEED=pids[9],
+            #         TIMING_ADVANCE=pids[10],
+            #         INTAKE_TEMP=pids[11],
+            #         MAF_FLOW=pids[12],
+            #         THROTTLE_POSITION=pids[13],
+            #         BAROMETRIC_PRESSURE=pids[14],
+            #         CATALYST_TEMP_B1S1=pids[15],
+            #         CATALYST_TEMP_B1S2=pids[16],
+            #         AIR_FUEL_EQUIV_RATIO=pids[17],
+            #         ENGINE_OIL_TEMP=pids[18],
+            #         FUEL_INJECTION_TIMING=pids[19],
+            #         ENGINE_FUEL_RATE=pids[20]
+            #     ))
     except Exception as e:
         logger.error("WebSocket connection closed:", extra=str(e))
