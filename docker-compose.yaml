@@ -16,9 +16,6 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/mydb
-      API_KEY: /run/secrets/api_key
-    secrets:
-      - api_key
     container_name: fastapi_app
     depends_on:
       postgres:
@@ -57,10 +54,6 @@ services:
       - fastapi
     networks:
       - fastapi_network
-
-secrets:
-  api_key:
-    external: true
 
 volumes:
   postgres_data:
