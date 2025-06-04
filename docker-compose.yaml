@@ -60,7 +60,7 @@ services:
 
 secrets:
   api_key:
-    file: api_key.txt
+    external: true
 
 volumes:
   postgres_data:
