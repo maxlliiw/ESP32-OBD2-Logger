@@ -102,11 +102,11 @@ async def clear_logs():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    api_key = websocket.query_params.get("api_key")
-    if api_key != API_KEY:
-        await websocket.close(code=1008)
-        print("Unauthorized WebSocket connection attempt")
-        return
+    # api_key = websocket.query_params.get("api_key")
+    # if api_key != API_KEY:
+    #     await websocket.close(code=1008)
+    #     print("Unauthorized WebSocket connection attempt")
+    #     return
 
     await websocket.accept()
     try:
