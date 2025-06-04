@@ -1,5 +1,4 @@
 #include "secrets.h"
-#include <ArduinoJson.h>
 #include <ArduinoWebsockets.h>
 #include <FreematicsPlus.h>
 #include <WiFi.h>
