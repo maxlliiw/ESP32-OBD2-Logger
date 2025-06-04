@@ -35,7 +35,7 @@ vehicle_log = sqlalchemy.Table(
     "CarDataLog",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("timestamp", sqlalchemy.BigInteger),
+    sqlalchemy.Column("timestamp", sqlalchemy.Numeric),
     sqlalchemy.Column("VIN", sqlalchemy.String),
     sqlalchemy.Column("BATTERY_VOLTAGE", sqlalchemy.Float),
     sqlalchemy.Column("ENGINE_LOAD", sqlalchemy.Integer),
@@ -118,7 +118,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if ("obd" in json_dict):
                 obd = json_dict.get("obd")
                 vin = obd.get("vin")
-                voltage = obd.get("battery") / 100
+                voltage = obd.get("battery")
                 pids = obd.get("pids")
                 values = {
                     pid_map[k]: v for k, v in pids.items()
