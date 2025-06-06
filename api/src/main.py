@@ -35,7 +35,7 @@ vehicle_log = sqlalchemy.Table(
     "CarDataLog",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("timestamp", sqlalchemy.Numeric),
+    sqlalchemy.Column("timestamp", sqlalchemy.BigInteger),
     sqlalchemy.Column("VIN", sqlalchemy.String),
     sqlalchemy.Column("BATTERY_VOLTAGE", sqlalchemy.Float),
     sqlalchemy.Column("ENGINE_LOAD", sqlalchemy.Integer),
@@ -125,7 +125,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 }
                 t = int(json_dict.get("st")) * 1000
                 t += int(json_dict.get("ts"))
-                values["timestamp"] = t
+                values["timestamp"] = int(t)
                 values["VIN"] = vin
                 values["BATTERY_VOLTAGE"] = float(voltage) / 100
 
